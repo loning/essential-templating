@@ -26,13 +26,19 @@ namespace Essential.Templating.Razor
             lock (_syncRoot)
             {
                 _templateVisitor = templateVisitor;
-                var body = ((ITemplate) this).Run(new ExecuteContext(new ObjectViewBag(viewBag)));
-                _templateVisitor.Body(body);
+                StringBuilder sb = new StringBuilder();
+                using (var sw = new StringWriter(sb))
+                {
+                    ((ITemplate)this).Run(
+                        new ExecuteContext(new ObjectViewBag(viewBag)),sw);
+                    _templateVisitor.Body(sb.ToString());
+                }
                 _templateVisitor = null;
             }
         }
 
-        string ITemplate.Run(ExecuteContext context)
+
+        void ITemplate.Run(ExecuteContext context, TextWriter writerTo)
         {
             var builder = new StringBuilder();
             _executeContextAdapter = new ExecuteContextAdapter(this, context);
@@ -47,7 +53,8 @@ namespace Essential.Templating.Razor
             var parent = ResolveLayout(Layout);
             if (parent == null && string.IsNullOrEmpty(Layout))
             {
-                return builder.ToString();
+                writerTo.Write(builder.ToString());
+                //return builder.ToString();
             }
             if (parent == null)
             {
@@ -61,7 +68,7 @@ namespace Essential.Templating.Razor
             exposingParent._templateVisitor = _templateVisitor;
             var bodyWriter = new TemplateWriter(tw => tw.Write(builder.ToString()));
             _executeContextAdapter.PushBody(bodyWriter);
-            return parent.Run(_executeContextAdapter.Context);
+            parent.Run(_executeContextAdapter.Context, writerTo);
         }
 
         //[DebuggerStepThrough]
@@ -72,7 +79,7 @@ namespace Essential.Templating.Razor
             {
                 return base.RenderSection(name, isRequired);
             }
-            var builder = ((StringWriter) _executeContextAdapter.CurrentWriter).GetStringBuilder();
+            var builder = ((StringWriter)_executeContextAdapter.CurrentWriter).GetStringBuilder();
             var start = builder.Length;
             var writer = base.RenderSection(name, isRequired);
             var ignore = writer.ToString();

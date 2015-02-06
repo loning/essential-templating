@@ -1,6 +1,8 @@
 ﻿using System.Threading;
 using Essential.Templating.Common.Rendering;
 using RazorEngine.Templating;
+using System.Text;
+using System.IO;
 
 namespace Essential.Templating.Razor.Rendering
 {
@@ -12,10 +14,14 @@ namespace Essential.Templating.Razor.Rendering
             var previousUICulture = Thread.CurrentThread.CurrentUICulture;
             Thread.CurrentThread.CurrentCulture = template.Culture;
             Thread.CurrentThread.CurrentUICulture = template.Culture;
-            var result = ((ITemplate)template).Run(new ExecuteContext(new ObjectViewBag(viewBag)));
+            StringBuilder sb = new StringBuilder();
+            using (var sw = new StringWriter(sb))
+            {
+                ((ITemplate)template).Run(new ExecuteContext(new ObjectViewBag(viewBag)),sw);
+            }
             Thread.CurrentThread.CurrentCulture = previousCulture;
             Thread.CurrentThread.CurrentUICulture = previousUICulture;
-            return result;  
+            return sb.ToString();  
         }
     }
 }
