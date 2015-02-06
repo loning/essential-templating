@@ -54,7 +54,7 @@ namespace Essential.Templating.Razor
             if (parent == null && string.IsNullOrEmpty(Layout))
             {
                 writerTo.Write(builder.ToString());
-                //return builder.ToString();
+                return;
             }
             if (parent == null)
             {
